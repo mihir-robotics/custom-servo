@@ -1,19 +1,21 @@
 /**
- * Custom Servo Library Implementation with PID Control
+ * Custom Servo Library Implementation
+ * 
+ * Uses incremental step-based movement for smooth, non-jerky servo control.
+ * servo.write() sets an absolute angle — not a velocity or force — so PID
+ * output cannot be meaningfully applied to it. Instead, update() nudges the
+ * servo one step per call toward the target, relying on potentiometer feedback
+ * to confirm actual position before each step.
  */
 
 #include "Arduino.h"
 #include "CustomServo.h"
 
-// Default PID coefficients (can be tuned)
-#define DEFAULT_KP 1.5f
-#define DEFAULT_KI 0.1f
-#define DEFAULT_KD 0.8f
+#define STEP_SIZE 2
 
 CustomServo::CustomServo()
-    : servoPin(0), feedbackPin(0), calibLow(0), calibHigh(1023),
-      Kp(DEFAULT_KP), Ki(DEFAULT_KI), Kd(DEFAULT_KD),
-      targetAngle(90), currentAngle(90), integral(0), lastError(0), lastTime(0)
+    : servoPin(0), feedbackPin(0), calibLow(70), calibHigh(590),
+      targetAngle(90), currentAngle(90), lastTime(0)
 {
 }
 
@@ -33,91 +35,18 @@ void CustomServo::begin(uint8_t servo_pin, uint8_t feedback_pin, int calib_low, 
 
     // Attach servo to pin
     servo.attach(servoPin);
-
+    servo.write(90);
     // Read initial angle
-    currentAngle = readFeedback();
+    currentAngle = getCurrentAngle();
     targetAngle = currentAngle;
 
     // Initialize timing
     lastTime = millis();
-}
-
-void CustomServo::setTargetAngle(uint8_t angle)
-{
-    // Constrain angle to valid range
-    targetAngle = constrain(angle, 0, 180);
+    Serial.print("lastTime:");
+    Serial.println(lastTime);
 }
 
 uint8_t CustomServo::getCurrentAngle()
-{
-    currentAngle = readFeedback();
-    return currentAngle;
-}
-
-void CustomServo::update()
-{
-    // Get current time for dt calculation
-    unsigned long currentTime = millis();
-    unsigned long dt = currentTime - lastTime;
-    lastTime = currentTime;
-
-    // Avoid division by zero
-    if (dt == 0) return;
-
-    // Read current angle
-    currentAngle = readFeedback();
-
-    // Calculate error
-    int error = targetAngle - currentAngle;
-
-    // Stop PID control if at target (within tolerance)
-    if (abs(error) <= TOLERANCE)
-    {
-        integral = 0;  // Reset integral to prevent windup
-        lastError = 0;
-        return;
-    }
-
-    // Proportional term
-    float P = Kp * error;
-
-    // Integral term (with anti-windup)
-    integral += error * dt;
-    integral = constrain(integral, -1000, 1000);  // Limit integral
-    float I = Ki * integral;
-
-    // Derivative term
-    float D = 0;
-    if (dt > 0)
-    {
-        D = Kd * (error - lastError) / dt;
-    }
-    lastError = error;
-
-    // Calculate PID output
-    float output = P + I + D;
-
-    // Map PID output to servo angle
-    int servoAngle = currentAngle + (int)output;
-    servoAngle = constrainServoValue(servoAngle);
-
-    // Write to servo
-    servo.write(servoAngle);
-}
-
-bool CustomServo::isAtTarget()
-{
-    return abs((int)targetAngle - (int)currentAngle) <= TOLERANCE;
-}
-
-void CustomServo::setPIDCoefficients(float kp, float ki, float kd)
-{
-    Kp = kp;
-    Ki = ki;
-    Kd = kd;
-}
-
-uint8_t CustomServo::readFeedback()
 {
     int reading = analogRead(feedbackPin);
     // Map the analog reading to angle (0-180 degrees)
@@ -125,7 +54,42 @@ uint8_t CustomServo::readFeedback()
     return angle;
 }
 
-uint8_t CustomServo::constrainServoValue(int value)
+void CustomServo::update(uint8_t target)
 {
-    return constrain(value, 0, 180);
+    // Enforce a minimum interval between steps to let the servo physically move
+    // and for the potentiometer reading to settle before the next nudge.
+    unsigned long now = millis();
+    if (now - lastTime < STEP_INTERVAL_MS) return;
+    lastTime = now;
+
+    Serial.println("Update called");
+    // Read actual current angle from potentiometer
+    currentAngle = getCurrentAngle();
+
+    int error = (int)target - (int)currentAngle;
+
+    // Already at target - nothing to do
+    if (abs(error) <= TOLERANCE) return;
+
+    // Nudge one step in the direction of the target
+    int nextAngle = (int)currentAngle + (error > 0 ? STEP_SIZE : -STEP_SIZE);
+
+    // Clamp to valid servo range
+    nextAngle = constrain(nextAngle, 0, 180);
+
+    Serial.print("Target: ");
+    Serial.print(target);
+    Serial.print(" | Current: ");
+    Serial.print(currentAngle);
+    Serial.print(" | Error: ");
+    Serial.print(error);
+    Serial.print(" | Writing: ");
+    Serial.println(nextAngle);
+
+    servo.write(nextAngle);
+}
+
+bool CustomServo::isAtTarget()
+{
+    return abs((int)targetAngle - (int)currentAngle) <= TOLERANCE;
 }

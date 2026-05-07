@@ -1,8 +1,9 @@
 /**
- * Custom Servo Library for SG90 Motor with PID Control
+ * Custom Servo Library for MG90S Motor
  * 
- * Provides feedback-based servo control using PID algorithm
- * for smooth, non-jerky movement to target angles.
+ * Provides feedback-based servo control using incremental step movement
+ * for smooth, non-jerky positioning. A potentiometer wired to the servo
+ * shaft provides real angle feedback on every update() call.
  */
 
 #ifndef CUSTOM_SERVO_H
@@ -24,16 +25,10 @@ public:
      * Initialize the servo with pin assignments and calibration values
      * @param servoPin PWM pin for servo control
      * @param feedbackPin Analog pin for potentiometer feedback
-     * @param calibLow Lower calibration value from potentiometer
-     * @param calibHigh Upper calibration value from potentiometer
+     * @param calibLow Lower calibration value from potentiometer (default: 0)
+     * @param calibHigh Upper calibration value from potentiometer (default: 1023)
      */
     void begin(uint8_t servoPin, uint8_t feedbackPin, int calibLow, int calibHigh);
-
-    /**
-     * Set the target angle for the servo
-     * @param angle Desired angle (0-180 degrees)
-     */
-    void setTargetAngle(uint8_t angle);
 
     /**
      * Read and return current servo angle from potentiometer feedback
@@ -42,24 +37,19 @@ public:
     uint8_t getCurrentAngle();
 
     /**
-     * Update the servo position using PID control
-     * Must be called regularly (ideally in a loop with consistent timing)
+     * Step the servo one degree closer to target. Call this repeatedly in
+     * loop() — each call moves the servo by one step (STEP_SIZE degrees)
+     * and returns immediately; the rate of movement is governed by
+     * STEP_INTERVAL_MS. Uses potentiometer feedback to read true position
+     * before each step.
+     * @param target Desired angle (0-180 degrees)
      */
-    void update();
-
+    void update(uint8_t target);
     /**
      * Check if servo is at target angle within tolerance
      * @return true if within 1 degree of target
      */
     bool isAtTarget();
-
-    /**
-     * Set PID coefficients for tuning
-     * @param kp Proportional gain
-     * @param ki Integral gain
-     * @param kd Derivative gain
-     */
-    void setPIDCoefficients(float kp, float ki, float kd);
 
 private:
     // Hardware objects and pins
@@ -70,32 +60,18 @@ private:
     // Calibration values
     int calibLow;
     int calibHigh;
-
-    // PID control parameters
-    float Kp;  // Proportional gain
-    float Ki;  // Integral gain
-    float Kd;  // Derivative gain
-
-    // PID state variables
     uint8_t targetAngle;
     uint8_t currentAngle;
-    float integral;          // Accumulated integral error
-    int lastError;           // Previous error for derivative calculation
-    unsigned long lastTime;  // Last update time for dt calculation
-    static const uint8_t TOLERANCE = 1;  // 1 degree tolerance
 
-    /**
-     * Read analog input and convert to angle
-     * @return Mapped angle value (0-180)
-     */
-    uint8_t readFeedback();
+    // Timing
+    unsigned long lastTime;
 
-    /**
-     * Constrain PWM value for servo
-     * @param value PWM value to constrain
-     * @return Constrained value (0-180 degrees)
-     */
-    uint8_t constrainServoValue(int value);
+    // How many ms to wait between steps. Controls movement speed.
+    // Lower = faster but risks the pot reading not settling in time.
+    static const uint8_t STEP_INTERVAL_MS = 20;
+
+    // Degrees of acceptable error at target position
+    static const uint8_t TOLERANCE = 5;
 };
 
 #endif
