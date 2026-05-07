@@ -1,5 +1,5 @@
 /**
- * Custom Servo Library for MG90S Motor
+ * Custom Servo Library for Modified MG90S Motor
  * 
  * Provides feedback-based servo control using incremental step movement
  * for smooth, non-jerky positioning. A potentiometer wired to the servo
@@ -22,17 +22,17 @@ public:
     ~CustomServo();
 
     /**
-     * Initialize the servo with pin assignments and calibration values
-     * @param servoPin PWM pin for servo control
+     * Initialize the servo with pin assignments and calibration values.
+     * @param servoPin    PWM pin for servo control
      * @param feedbackPin Analog pin for potentiometer feedback
-     * @param calibLow Lower calibration value from potentiometer (default: 0)
-     * @param calibHigh Upper calibration value from potentiometer (default: 1023)
+     * @param calibLow    Potentiometer ADC reading at 0 degrees
+     * @param calibHigh   Potentiometer ADC reading at 180 degrees
      */
     void begin(uint8_t servoPin, uint8_t feedbackPin, int calibLow, int calibHigh);
 
     /**
-     * Read and return current servo angle from potentiometer feedback
-     * @return Current angle (0-180 degrees)
+     * Read and return current servo angle from potentiometer feedback.
+     * @return Current angle in degrees (0-180)
      */
     uint8_t getCurrentAngle();
 
@@ -45,30 +45,33 @@ public:
      * @param target Desired angle (0-180 degrees)
      */
     void update(uint8_t target);
+
     /**
-     * Check if servo is at target angle within tolerance
-     * @return true if within 1 degree of target
+     * Check if the servo has reached its target angle within tolerance.
+     * @return true if within TOLERANCE degrees of target
      */
     bool isAtTarget();
 
 private:
-    // Hardware objects and pins
     Servo servo;
     uint8_t servoPin;
     uint8_t feedbackPin;
-    
-    // Calibration values
+
+    // Calibration values for potentiometer-to-angle mapping
     int calibLow;
     int calibHigh;
+
+    // Angle state
     uint8_t targetAngle;
     uint8_t currentAngle;
+    uint8_t commandedAngle;  // Last angle written to servo — stepped monotonically
 
     // Timing
     unsigned long lastTime;
 
     // How many ms to wait between steps. Controls movement speed.
     // Lower = faster but risks the pot reading not settling in time.
-    static const uint8_t STEP_INTERVAL_MS = 20;
+    static const uint8_t STEP_INTERVAL_MS = 10;
 
     // Degrees of acceptable error at target position
     static const uint8_t TOLERANCE = 5;

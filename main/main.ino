@@ -1,76 +1,60 @@
 // Code to control customised SG90 Servo with smooth PID-based movement
 #include <Servo.h>
-#include <CustomServo.h>
+#include "CustomServo.h"
 
-// Defining the lowest and highest voltage values for potentiometer calibration
-#define CALIBRATION_LOW 309
-#define CALIBRATION_HIGH 646
+// Defining the lowest and highest voltage values for potentiometer calibration 
+// Manually measured using debug_sweep.ino, will be refactored into a calibrate() later
+#define CALIBRATION_LOW 78
+#define CALIBRATION_HIGH 588
 
 // CustomServo object for PID-controlled feedback
 CustomServo serv;
 
 // Declaring read and write pins for servo on board
-uint8_t servoPin = 3;
-uint8_t readPin = 26;  // pin 26 is A0 on Pico
+// On Arduino Nano, use a PWM-capable digital pin for the servo and an analog pin for feedback
+uint8_t servoPin = 0x03;  // D3
+uint8_t readPin = 0x00;   // A0
 
-// Update timing
-unsigned long lastUpdateTime = 0;
-int UPDATE_INTERVAL_MS = 10;  // Update PID control every 10ms for smooth movement
+uint8_t targetAngle = 0;
 
 //  Setting up the connections
 void setup()
 {
     Serial.begin(9600);
     
-    // Initialize CustomServo with calibration values
+    //
     serv.begin(servoPin, readPin, CALIBRATION_LOW, CALIBRATION_HIGH);
+    Serial.println("Servo attached!");
+
+    //
+    Serial.print("Servo written to 90, current angle reading:");
+    Serial.println((int)serv.getCurrentAngle());
     
-    // Optional: Tune PID coefficients (default: Kp=1.5, Ki=0.1, Kd=0.8)
-    // serv.setPIDCoefficients(1.5, 0.1, 0.8);
 }
 
 // Main loop with smooth servo movement
 void loop()
 {
-    // Sweep forward (0 to 180 degrees)
-    for (int targetPos = 0; targetPos <= 180; targetPos++)
+    // Check for new target from Serial Monitor
+    if (Serial.available() > 0)
     {
-        serv.setTargetAngle(targetPos);
-        
-        // Keep updating PID control until we reach target
-        while (!serv.isAtTarget())
+        String input = Serial.readStringUntil('\n');
+        input.trim();
+        if (input.length() > 0)
         {
-            serv.update();
-            
-            // Print current angle for monitoring
-            uint8_t currentAngle = serv.getCurrentAngle();
-            Serial.print("Target: ");
-            Serial.print(targetPos);
-            Serial.print(" | Current: ");
-            Serial.println(currentAngle);
-            
-            delay(UPDATE_INTERVAL_MS);
+            int value = input.toInt();
+            if (value >= 0 && value <= 180)
+            {
+                targetAngle = (uint8_t)value;
+                Serial.print("New target set: ");
+                Serial.println(targetAngle);
+            }
+            else
+            {
+                Serial.println("Invalid angle. Enter a value between 0 and 180.");
+            }
         }
     }
 
-    // Sweep backward (180 to 0 degrees)
-    for (int targetPos = 180; targetPos >= 0; targetPos--)
-    {
-        serv.setTargetAngle(targetPos);
-        
-        // Keep updating PID control until we reach target
-        while (!serv.isAtTarget())
-        {
-            serv.update();
-            
-            // Print current angle for monitoring
-            uint8_t currentAngle = serv.getCurrentAngle();
-            Serial.print("Target: ");
-            Serial.print(targetPos);
-            Serial.print(" | Current: ");
-            Serial.println(currentAngle);
-            
-            delay(UPDATE_INTERVAL_MS);
-        }
-    }
+    serv.update(targetAngle);
 }
