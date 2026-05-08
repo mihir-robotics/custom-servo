@@ -6,7 +6,7 @@
  * shaft provides real angle feedback on every update() call.
  */
 
-#ifndef CUSTOM_SERVO_H
+#pragma once CUSTOM_SERVO_H
 #define CUSTOM_SERVO_H
 
 #include "Arduino.h"
@@ -42,15 +42,17 @@ public:
      * and returns immediately; the rate of movement is governed by
      * STEP_INTERVAL_MS. Uses potentiometer feedback to read true position
      * before each step.
+     * @param debug A flag to print out the debug output on serial
      * @param target Desired angle (0-180 degrees)
      */
-    void update(uint8_t target);
+    void update(uint8_t target, bool debug = false);
 
     /**
      * Check if the servo has reached its target angle within tolerance.
+     * @param target
      * @return true if within TOLERANCE degrees of target
      */
-    bool isAtTarget();
+    bool isAtTarget(uint8_t target);
 
 private:
     Servo servo;
@@ -71,10 +73,10 @@ private:
 
     // How many ms to wait between steps. Controls movement speed.
     // Lower = faster but risks the pot reading not settling in time.
-    static const uint8_t STEP_INTERVAL_MS = 10;
+    unsigned long STEP_INTERVAL_MS = 20;
+    static const uint8_t STEP_SIZE = 2;
 
     // Degrees of acceptable error at target position
     static const uint8_t TOLERANCE = 5;
 };
 
-#endif
