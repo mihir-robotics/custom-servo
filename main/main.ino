@@ -12,8 +12,8 @@ CustomServo serv;
 
 // Declaring read and write pins for servo on board
 // On Arduino Nano, use a PWM-capable digital pin for the servo and an analog pin for feedback
-uint8_t servoPin = 0x03;  // D3
-uint8_t readPin = 0x00;   // A0
+uint8_t servoPin = 3;  // D3
+uint8_t readPin = A0;   // A0
 
 uint8_t targetAngle = 0;
 
@@ -21,12 +21,10 @@ uint8_t targetAngle = 0;
 void setup()
 {
     Serial.begin(9600);
-    
-    //
+
     serv.begin(servoPin, readPin, CALIBRATION_LOW, CALIBRATION_HIGH);
     Serial.println("Servo attached!");
 
-    //
     Serial.print("Servo written to 90, current angle reading:");
     Serial.println((int)serv.getCurrentAngle());
     
@@ -56,5 +54,5 @@ void loop()
         }
     }
 
-    serv.update(targetAngle);
+    serv.update(targetAngle); // set debug flag to true to print out the values
 }
