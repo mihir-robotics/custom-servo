@@ -22,13 +22,15 @@ public:
     ~CustomServo();
 
     /**
-     * Initialize the servo with pin assignments and calibration values.
+     * Initialize the servo with pin assignments and optional calibration values.
+     * If calibLow and calibHigh are not provided (default to -1), the servo will
+     * automatically calibrate by moving to 180° and 0°, capturing potentiometer readings.
      * @param servoPin    PWM pin for servo control
      * @param feedbackPin Analog pin for potentiometer feedback
-     * @param calibLow    Potentiometer ADC reading at 0 degrees
-     * @param calibHigh   Potentiometer ADC reading at 180 degrees
+     * @param calibLow    Potentiometer ADC reading at 0 degrees (default: -1 for auto-calibrate)
+     * @param calibHigh   Potentiometer ADC reading at 180 degrees (default: -1 for auto-calibrate)
      */
-    void begin(uint8_t servoPin, uint8_t feedbackPin, int calibLow, int calibHigh);
+    void begin(uint8_t servoPin, uint8_t feedbackPin, int calibLow = -1, int calibHigh = -1);
 
     /**
      * Read and return current servo angle from potentiometer feedback.
