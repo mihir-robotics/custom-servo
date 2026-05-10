@@ -24,13 +24,33 @@ void CustomServo::begin(uint8_t servo_pin, uint8_t feedback_pin, int calib_low, 
 {
     servoPin     = servo_pin;
     feedbackPin  = feedback_pin;
-    calibLow     = calib_low;
-    calibHigh    = calib_high;
 
     pinMode(feedbackPin, INPUT);
-
     servo.attach(servoPin);
-    servo.write(90);
+
+    // Auto-calibrate if calibration values not provided
+    if (calib_low == -1 || calib_high == -1) {
+        // Move to 180 and capture calibHigh
+        servo.write(180);
+        delay(1000);  // Wait for servo to settle
+        calibHigh = analogRead(feedbackPin);
+        if (Serial) {
+            Serial.print("Calibration at 180°: ");
+            Serial.println(calibHigh);
+        }
+
+        // Move to 0 and capture calibLow
+        servo.write(0);
+        delay(1000);  // Wait for servo to settle
+        calibLow = analogRead(feedbackPin);
+        if (Serial) {
+            Serial.print("Calibration at 0°: ");
+            Serial.println(calibLow);
+        }
+    } else {
+        calibLow     = calib_low;
+        calibHigh    = calib_high;
+    }
 
     // Sync internal state to actual position
     currentAngle  = getCurrentAngle();
@@ -48,15 +68,6 @@ uint8_t CustomServo::getCurrentAngle()
     return angle;
 }
 
-/*
-Claude review:
-targetAngle member is never set from outside
-The private targetAngle member is initialised to 90 in the constructor, but update() takes a target parameter and never stores it into targetAngle. 
-This makes isAtTarget() always compare against the constructor-initialised value (90), not whatever you last passed into update(). 
-Either remove targetAngle from the member variables and fix isAtTarget() to take a parameter, or update targetAngle at the top of update(). 
-
-Also, isAtTarget is never used, I think update() should poll isAtTarget every iteration.
-*/
 void CustomServo::update(uint8_t target, bool debug = false)
 {
     // Enforce a minimum interval between steps to let the servo physically move
@@ -88,7 +99,6 @@ void CustomServo::update(uint8_t target, bool debug = false)
     Serial.print(error);
     Serial.print(" | Writing: ");
     Serial.println(commandedAngle);
-   //#endif
     }
     servo.write(commandedAngle);
 }

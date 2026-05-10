@@ -4,8 +4,8 @@
 
 // Defining the lowest and highest voltage values for potentiometer calibration 
 // Manually measured using debug_sweep.ino, will be refactored into a calibrate() later
-#define CALIBRATION_LOW 78
-#define CALIBRATION_HIGH 588
+#define CALIBRATION_LOW 64
+#define CALIBRATION_HIGH 557
 
 // CustomServo object for PID-controlled feedback
 CustomServo serv;
@@ -22,10 +22,10 @@ void setup()
 {
     Serial.begin(9600);
 
-    serv.begin(servoPin, readPin, CALIBRATION_LOW, CALIBRATION_HIGH);
+    serv.begin(servoPin, readPin,CALIBRATION_LOW,CALIBRATION_HIGH); // testing auto calibration
     Serial.println("Servo attached!");
 
-    Serial.print("Servo written to 90, current angle reading:");
+    Serial.print("current angle reading:");
     Serial.println((int)serv.getCurrentAngle());
     
 }

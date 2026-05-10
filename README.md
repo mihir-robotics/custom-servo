@@ -4,7 +4,6 @@ A step-based, feedback-controlled servo library for Arduino. Built for a modifie
 
 > **Status: Work in Progress**
 The following are not yet implemented:
->- Function `calibrate()`. Hardcoded calibration values are required for now (see [Calibration](#calibration)). 
 >- Currently `update()` only runs one iteration, plan is to make it run until `targetAngle` is reached. (see `Moving to a Target and Waiting for Arrival` under [Usage](#usage))
 >- Creating an interactive app to control and see real-time values of the Servo (maybe later)
 
@@ -75,7 +74,9 @@ Copy `CustomServo.h` and `CustomServo.cpp` into your sketch folder alongside `ma
 
 The potentiometer does not produce a full 0–1023 ADC range across the servo's 0–180° travel. You need to find the actual ADC values at each extreme and pass them to `begin()`.
 
-**How to find your calibration values:**
+The library now has a auto-calibration built into `begin()`. Simply don't pass the calibration values and the function will manually move the servo to 0-180 and assign the values! (yay) 
+
+**How to find your calibration values manually:**
 
 Use `debug_sweep.ino` (or manually command the servo to 0° and 180° and read `analogRead(A0)` from Serial Monitor). Record the two readings:
 
