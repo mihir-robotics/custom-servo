@@ -5,6 +5,7 @@ A step-based, feedback-controlled servo library for Arduino. Built for a modifie
 > **Status: Work in Progress**
 The following are not yet implemented:
 >- Currently `update()` only runs one iteration, plan is to make it run until `targetAngle` is reached. (see `Moving to a Target and Waiting for Arrival` under [Usage](#usage))
+>- Need to add 1uF capacitor between Analog input and servo to reduce noise (Hardware issue)
 >- Creating an interactive app to control and see real-time values of the Servo (maybe later)
 
 ---
