@@ -1,4 +1,4 @@
-// Code to control customised SG90 Servo with smooth PID-based movement
+// Code to control customised SG90 Servo with smooth movement
 #include <Servo.h>
 #include "CustomServo.h"
 
@@ -7,7 +7,7 @@
 #define CALIBRATION_LOW 64
 #define CALIBRATION_HIGH 557
 
-// CustomServo object for PID-controlled feedback
+// CustomServo object
 CustomServo serv;
 
 // Declaring read and write pins for servo on board
@@ -15,14 +15,14 @@ CustomServo serv;
 uint8_t servoPin = 3;  // D3
 uint8_t readPin = A0;   // A0
 
-uint8_t targetAngle = 0;
+uint8_t targetAngle= 0;
 
 //  Setting up the connections
 void setup()
 {
     Serial.begin(9600);
 
-    serv.begin(servoPin, readPin,CALIBRATION_LOW,CALIBRATION_HIGH); // testing auto calibration
+    serv.begin(servoPin, readPin); // testing auto calibration
     Serial.println("Servo attached!");
 
     Serial.print("current angle reading:");
@@ -54,5 +54,5 @@ void loop()
         }
     }
 
-    serv.update(targetAngle); // set debug flag to true to print out the values
+    serv.update(targetAngle, true); // set debug flag to true to print out the values
 }
